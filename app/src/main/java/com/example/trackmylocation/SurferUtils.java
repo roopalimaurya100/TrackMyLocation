@@ -10,7 +10,7 @@ public class SurferUtils {
         System.out.println("Hello");
     }
 
-    public static ArrayList<LatLng> plotNearByPoints(LatLng user,int dist){
+    public static ArrayList<LatLng> coinsAtADistance(LatLng user,int dist){
         double latitude = user.latitude;
         double longitude = user.longitude;
 

@@ -29,4 +29,5 @@ dependencies {
     implementation 'com.google.gms:google-services:3.0.0'
     implementation 'com.google.android.gms:play-services-location:8.4.0'
     implementation 'com.google.android.gms:play-services-wearable:8.4.0'
+    implementation 'com.google.android.gms:play-services-maps:9.6.0'
 }

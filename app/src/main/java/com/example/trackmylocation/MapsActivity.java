@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.*;
@@ -33,13 +34,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     SQLiteDatabase sqLiteDatabase ;
     private GoogleMap mMap;
+    private GoogleMap usermMap;
     LocationManager locationManager;
     Marker marker;
     Button wallet;
     SurferUtils surferUtils;
+    ArrayList<LatLng> coinsToCollect = null;
+    HashMap<String,Marker> markers;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        markers = new HashMap<>();
         sqLiteDatabase = openOrCreateDatabase("FCSurfers", Context.MODE_PRIVATE ,null);
         sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS merchant_info (MerchantId VARCHAR(20), latitude VARCHAR(20) , longitude VARCHAR(20),TotalCoins INTEGER , REDEEMED INTEGER,TIMESTAMP VARCHAR(20))");
         sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS user_merchant_mapping (MerchantId VARCHAR(20), UserId VARCHAR(20) ,TIMESTAMP VARCHAR(20))");
@@ -50,7 +55,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         wallet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(),"Points",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(),"Your total FC Points : ",Toast.LENGTH_SHORT).show();
             }
         });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -72,29 +77,86 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-      if(  locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+      if(  locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
           locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new LocationListener() {
               @Override
               public void onLocationChanged(Location location) {
 
                   double latitude = location.getLatitude();
                   double longitude = location.getLongitude();
-                  LatLng latLng = new LatLng(latitude,longitude);
+                  final LatLng latLng = new LatLng(latitude, longitude);
                   Geocoder geocoder = new Geocoder(getApplicationContext());
                   try {
                       List<Address> addressList = geocoder.getFromLocation(latitude, longitude, 1);
-                      String str = addressList.get(0).getLocality() + " , "+addressList.get(0).getCountryName()+latitude+" "+longitude;
-                      if(marker != null){
+                      String str = addressList.get(0).getLocality() + " , " + addressList.get(0).getCountryName() + latitude + " " + longitude;
+                      if (marker != null) {
                           marker.remove();
                       }
-                    marker=  mMap.addMarker(new MarkerOptions().position(latLng).title(str));
-                      mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng , 19.9f));
-                      mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                      marker = usermMap.addMarker(new MarkerOptions().position(latLng).title(str));
+                      usermMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 19.9f));
+                      usermMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
 
-                  }
-                  catch(IOException e){
+                  } catch (IOException e) {
                       e.printStackTrace();
                   }
+                  //steps to repeat if user moved a significant distance
+                  {
+                      //clear all markers
+                      for (Map.Entry hm : markers.entrySet()) {
+                          Marker value = (Marker) hm.getValue();
+                          value.remove();
+                      }
+                      //plot nearby coins
+                      ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
+                      LatLng obj  = new LatLng(28.4982091, 77.1054209);
+                      coinsToPlot.add(obj);
+                      LatLng obj1  = new LatLng(28.4982221, 77.1055209);
+                      coinsToPlot.add(obj1);
+                      coinsToPlot.add(new LatLng(28.4983091, 77.1054229));
+                      createMarkerFromArray(coinsToPlot);
+
+                      coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
+                      coinsToCollect.add(obj);
+                      coinsToCollect.add(obj1);
+
+                      TextView text = new TextView(getApplicationContext());
+                      text.setText("Tap to collect!!");
+                    /*  IconGenerator generator = new IconGenerator(getApplicationContext());
+                      generator.setBackground(context.getDrawable(R.drawable.coin));
+                      generator.setContentView(text);
+                      Bitmap icon = generator.makeIcon();*/
+                      for (int i = 0; i < coinsToCollect.size(); i++) {
+                          double lat = coinsToCollect.get(i).latitude;
+                          double lon = coinsToCollect.get(i).longitude;
+                          String key = lat+"_"+lon;
+                          if(markers.containsKey(key)) {
+                              Marker val = markers.get(key);
+                              val.setTag("Tap to collect!!");
+                              val.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                          }
+                      }
+
+
+                  }
+                  mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                      @Override
+                      public boolean onMarkerClick(Marker marker) {
+                          if (marker.getPosition().latitude == latLng.latitude && marker.getPosition().longitude == latLng.longitude)
+                              return false;
+                          LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+                          String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
+                          if (coinsToCollect.contains(coin)) {
+                              marker.remove();
+                              markers.remove(key);
+                              Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
+
+                              return true;
+                          } else {
+                              Toast.makeText(getApplicationContext(), "Move to the coin location to collect it!", Toast.LENGTH_SHORT).show();
+                              return false;
+                          }
+                      }
+                  });
               }
 
               @Override
@@ -112,8 +174,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
               }
           });
-
-      }
      else   if(  locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
                 @Override
@@ -121,24 +181,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     double latitude = location.getLatitude();
                     double longitude = location.getLongitude();
-                    LatLng latLng = new LatLng(latitude,longitude);
-                    Log.d("new latlng " ,latitude + " " + longitude);
+                    final LatLng latLng = new LatLng(latitude, longitude);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
                     try {
                         List<Address> addressList = geocoder.getFromLocation(latitude, longitude, 1);
-                        String str = addressList.get(0).getLocality() + " , "+addressList.get(0).getCountryName();
-                        if(marker != null){
+                        String str = addressList.get(0).getLocality() + " , " + addressList.get(0).getCountryName() + latitude + " " + longitude;
+                        if (marker != null) {
                             marker.remove();
                         }
-                     marker = mMap.addMarker(new MarkerOptions().position(latLng).title(str));
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng , 19.9f));
-                        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                        marker = usermMap.addMarker(new MarkerOptions().position(latLng).title(str));
+                        usermMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 19.9f));
+                        usermMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
 
-                    }
-                    catch(IOException e){
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    //steps to repeat if user moved a significant distance
+                    {
+                        //clear all markers
+                        for (Map.Entry hm : markers.entrySet()) {
+                            Marker value = (Marker) hm.getValue();
+                            value.remove();
+                        }
+                        //plot nearby coins
+                        ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
+                        LatLng obj  = new LatLng(28.4982091, 77.1054209);
+                        coinsToPlot.add(obj);
+                        LatLng obj1  = new LatLng(28.4982221, 77.1055209);
+                        coinsToPlot.add(obj1);
+                        coinsToPlot.add(new LatLng(28.4983091, 77.1054229));
+                        createMarkerFromArray(coinsToPlot);
 
+                        coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
+                        coinsToCollect.add(obj);
+                        coinsToCollect.add(obj1);
+
+                        TextView text = new TextView(getApplicationContext());
+                        text.setText("Tap to collect!!");
+                    /*  IconGenerator generator = new IconGenerator(getApplicationContext());
+                      generator.setBackground(context.getDrawable(R.drawable.coin));
+                      generator.setContentView(text);
+                      Bitmap icon = generator.makeIcon();*/
+                        for (int i = 0; i < coinsToCollect.size(); i++) {
+                            double lat = coinsToCollect.get(i).latitude;
+                            double lon = coinsToCollect.get(i).longitude;
+                            String key = lat+"_"+lon;
+                            if(markers.containsKey(key)) {
+                                Marker val = markers.get(key);
+                                val.setTag("Tap to collect!!");
+                                val.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                            }
+                        }
+
+
+                    }
+                    mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                        @Override
+                        public boolean onMarkerClick(Marker marker) {
+                            if (marker.getPosition().latitude == latLng.latitude && marker.getPosition().longitude == latLng.longitude)
+                                return false;
+                            LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+                            String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
+                            if (coinsToCollect.contains(coin)) {
+                                marker.remove();
+                                markers.remove(key);
+                                return true;
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Move to the coin location to collect it!", Toast.LENGTH_SHORT).show();
+                                return false;
+                            }
+                        }
+                    });
                 }
 
                 @Override
@@ -175,6 +288,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        usermMap = googleMap;
        ArrayList<Double> latLang = new ArrayList<Double>();
         latLang.add(28.4982091) ; latLang.add(77.1054209);
         latLang.add(28.4982012) ; latLang.add(77.1056465);
@@ -192,11 +306,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     protected void createMarker(double latitude, double longitude) {
-
+        String key = latitude+"_"+longitude;
+        Marker value =
         mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(latitude, longitude))
                  .title("Coins")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+        markers.put(key,value);
+    }
+
+    protected void createMarkerFromArray(ArrayList<LatLng> arr) {
+
+
+        for(int i = 0; i<arr.size() ;i++) {
+            double latitude = arr.get(i).latitude;
+            double longitude = arr.get(i).longitude;
+            String key = latitude+"_"+longitude;
+            Marker value =   mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(latitude, longitude))
+                    .title("Coins")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+            markers.put(key,value);
+        }
+
     }
 
 
