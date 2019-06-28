@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "12852956051",
+    "firebase_url": "https://coinscollection-e14d6.firebaseio.com",
+    "project_id": "coinscollection-e14d6",
+    "storage_bucket": "coinscollection-e14d6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12852956051:android:68b4e91d87a413b5",
+        "android_client_info": {
+          "package_name": "com.example.trackmylocation"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "12852956051-o3ac54e3jlplvfgkg5l33rhuaalepfi0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOBVBkXhwZk9TLsoJ4cyKqAjiS9SpNElM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "12852956051-o3ac54e3jlplvfgkg5l33rhuaalepfi0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

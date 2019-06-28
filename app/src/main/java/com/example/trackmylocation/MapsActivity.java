@@ -27,8 +27,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.util.*;
 import java.io.IOException;
+
+import static android.content.ContentValues.TAG;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -41,6 +49,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     SurferUtils surferUtils;
     ArrayList<LatLng> coinsToCollect = null;
     HashMap<String,Marker> markers;
+    String user_id = "u_1";
+    //FirebaseDatabase database;
+    //DatabaseReference ref;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +68,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View view) {
              //   select Coins from user_coins_mapping where UserId='u_1';
-                Toast.makeText(getApplicationContext(),"Your total FC Points : ",Toast.LENGTH_SHORT).show();
+                final FirebaseDatabase database = FirebaseDatabase.getInstance();
+                DatabaseReference ref = database.getReference().child("users").child("users").child("u_1");
+
+                ValueEventListener userListener = new ValueEventListener() {
+
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        //Object yyy = dataSnapshot.child("users").child("u_1");
+                        User user = dataSnapshot.getValue(User.class);
+                        Toast.makeText(getApplicationContext(),"Your total FC Points : "+user.getTotal_coins(),Toast.LENGTH_SHORT).show();
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        // Getting Post failed, log a message
+                        Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
+                        // ...
+                    }
+                };
+
+                ref.addListenerForSingleValueEvent(userListener);
             }
         });
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -107,6 +139,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                           Marker value = (Marker) hm.getValue();
                           value.remove();
                       }
+
+
+
                       //plot nearby coins
                       ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
                       LatLng obj  = new LatLng(28.4938342, 77.0927204);
