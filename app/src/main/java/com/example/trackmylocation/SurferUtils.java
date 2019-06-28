@@ -10,25 +10,20 @@ public class SurferUtils {
         System.out.println("Hello");
     }
 
-    public static ArrayList<LatLng> coinsAtADistance(LatLng user,int dist){
-        double latitude = user.latitude;
-        double longitude = user.longitude;
+    public static HashMap<String,Merchant>  coinsAtADistance(HashMap<String,Merchant> hashMap,int dist,double latUser,double lonUser){
 
-        ArrayList<LatLng> coinsToBePlotted = new ArrayList<>();
-        //get all coins from database
-        //select MerchantId,latitude,longitude from merchant_info where MerchantId not in (select MerchantId from user_merchant_mapping where  UserId='u_1') ;
-        ArrayList<Double> allCoinLat = new ArrayList<Double>();
-        ArrayList<Double> allCoinLon = new ArrayList<Double>();
-        for(int i =0 ; i<allCoinLat.size();i++){
-
-            double lat = allCoinLat.get(i);
-            double lon = allCoinLon.get(i);
-            double distance = diffInMeters(latitude,longitude,lat,lon);
-            if(distance<= dist ){
-                coinsToBePlotted.add(new LatLng(lat,lon));
+           for(Map.Entry hm : hashMap.entrySet()){
+           String key = (String)hm.getKey();
+           Merchant value = (Merchant)hm.getValue();
+           double latitude = Double.valueOf(value.getLatitude());
+           double longitude = Double.valueOf(value.getLongitude());
+            double distance = diffInMeters(latitude,longitude,latUser,lonUser);
+            if(distance> dist ){
+                hashMap.remove(key);
             }
         }
-        return coinsToBePlotted;
+
+        return hashMap;
     }
 
     //using Haversine method
@@ -53,5 +48,14 @@ public class SurferUtils {
         int currentPoint = 10;
         //update db with points;
         return updatedpoints;
+    }
+    public static  HashMap<String,Merchant>  differenceMerchants(HashMap<String,Merchant> hashMap,List<String> mer){
+if(mer==null ) return hashMap;
+        for(int i = 0 ; i<mer.size();i++){
+           if(hashMap.containsKey(mer))
+            hashMap.remove(mer);
+        }
+        return hashMap;
+
     }
 }

@@ -51,6 +51,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     ArrayList<LatLng> coinsToCollect = null;
     HashMap<String,Marker> markers;
     String user_id = "u_1";
+    List<String> allMerchants;
+    HashMap<String,Merchant> merchantHashMap = new HashMap<>();
     //FirebaseDatabase database;
     //DatabaseReference ref;
 
@@ -58,10 +60,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         markers = new HashMap<>();
-        sqLiteDatabase = openOrCreateDatabase("FCSurfers", Context.MODE_PRIVATE ,null);
-        sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS merchant_info (MerchantId VARCHAR(20), latitude VARCHAR(20) , longitude VARCHAR(20),TotalCoins INTEGER , REDEEMED INTEGER,TIMESTAMP VARCHAR(20))");
-        sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS user_merchant_mapping (MerchantId VARCHAR(20), UserId VARCHAR(20) ,TIMESTAMP VARCHAR(20))");
-        sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS user_coins_mapping (UserId VARCHAR(20), Coins VARCHAR(20) , TIMESTAMP VARCHAR(20))");
+    //    sqLiteDatabase = openOrCreateDatabase("FCSurfers", Context.MODE_PRIVATE ,null);
+      //  sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS merchant_info (MerchantId VARCHAR(20), latitude VARCHAR(20) , longitude VARCHAR(20),TotalCoins INTEGER , REDEEMED INTEGER,TIMESTAMP VARCHAR(20))");
+       /// sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS user_merchant_mapping (MerchantId VARCHAR(20), UserId VARCHAR(20) ,TIMESTAMP VARCHAR(20))");
+        //sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS user_coins_mapping (UserId VARCHAR(20), Coins VARCHAR(20) , TIMESTAMP VARCHAR(20))");
         surferUtils.print();
         setContentView(R.layout.activity_maps);
         wallet = findViewById(R.id.wallet_points);
@@ -149,19 +151,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                               //Map<String,Merchant> m = new HashMap<>();
                                       //(Map<String, Object>) dataSnapshot.getChildren();
                              List<Merchant> m = new ArrayList<>();
+                             merchantHashMap = new HashMap<>();
                               for(DataSnapshot merchantSnapshot: dataSnapshot.getChildren()){
+                                  String mid = merchantSnapshot.getKey();
+
+                                  Log.w("mid: ",mid);
                                   //String key = merchantSnapshot.getValue(Merchant);
                                   Merchant merchant = merchantSnapshot.getValue(Merchant.class);
-                                  m.add(merchant);
+                                  //m.add(merchant);
+                                  merchantHashMap.put(mid,merchant);
                               }
-//                              for(Map.Entry map : m.entrySet()){
-//                                  Log.w("MerchantMapKey ",(String)map.getKey());
-//                                  Log.w("MerchantMapValue ",(String) map.getValue());
+                              for(Map.Entry map : merchantHashMap.entrySet()){
+                                  Log.w("MerchantMapKey ",(String)map.getKey());
+                                  Merchant m123 = (Merchant)map.getValue();
+                                  Log.w("details: ",m123.totalCoins+" "+m123.latitude+" "+m123.longitude);
+                              }
+//                              for(Merchant x: m){
+//                                  //Log.w("mmmm",x.getMerchantId());
 //                              }
-                              for(Merchant x: m){
-                                  Log.w("mmmm",x.getMerchantId());
-                              }
-                              Log.w("merchants",m.toString().toString());
+                             // Log.w("merchants",merchantHashMap.toString().toString());
                           }
 
                           @Override
@@ -170,29 +178,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                           }
                       };
                       ref.addListenerForSingleValueEvent(merchantListener);
+
+                      DatabaseReference refCoin = database.getReference().child("users").child("u_1");
+                      ValueEventListener listenerUsers = new ValueEventListener() {
+
+                          @Override
+                          public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                              User user = dataSnapshot.getValue(User.class);
+                               allMerchants = user.getMerchants();
+
+                              for(String x: allMerchants){
+                                  Log.w("mmm:",x);
+
+                                }
+                              }
+
+                          @Override
+                          public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                          }
+                      };
+                      refCoin.addListenerForSingleValueEvent(listenerUsers);
+
                       //plot nearby coins
-                      ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
-                      LatLng obj  = new LatLng(28.4938342, 77.0927204);
-                      coinsToPlot.add(obj);
-                      LatLng obj1  = new LatLng(28.4938392, 77.0927604);
-                      coinsToPlot.add(obj1);
-                      coinsToPlot.add(new LatLng(28.4938742, 77.0927244));
-                      createMarkerFromArray(coinsToPlot);
+                      merchantHashMap = SurferUtils.differenceMerchants(merchantHashMap,allMerchants);
+                      merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 600,latitude,longitude);
 
-                      coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
-                      coinsToCollect.add(obj);
-                      coinsToCollect.add(obj1);
+                      createMarkerFromArray(merchantHashMap);
 
-                      TextView text = new TextView(getApplicationContext());
-                      text.setText("Tap to collect!!");
-                    /*  IconGenerator generator = new IconGenerator(getApplicationContext());
-                      generator.setBackground(context.getDrawable(R.drawable.coin));
-                      generator.setContentView(text);
-                      Bitmap icon = generator.makeIcon();*/
-                      for (int i = 0; i < coinsToCollect.size(); i++) {
-                          double lat = coinsToCollect.get(i).latitude;
-                          double lon = coinsToCollect.get(i).longitude;
-                          String key = lat+"_"+lon;
+                      merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 100,latitude,longitude);
+                    //  coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
+
+
+
+                      for(Map.Entry<String,Merchant> hm : merchantHashMap.entrySet()){
+
+                          String key = (String)hm.getKey();
+                          Merchant value = (Merchant)hm.getValue();
+                          double lat = Double.valueOf(value.getLatitude());
+                          double lon = Double.valueOf(value.getLongitude());
+                           key = lat+"_"+lon;
                           if(markers.containsKey(key)) {
                               Marker val = markers.get(key);
                               val.setTag("Tap to collect!!");
@@ -209,15 +235,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                               return false;
                           LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
                           String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
-                          if (coinsToCollect.contains(coin)) {
+                        double DIFF = SurferUtils.diffInMeters(latLng.latitude,latLng.longitude,marker.getPosition().latitude,marker.getPosition().longitude);
+double la = marker.getPosition().latitude;
+double lo = marker.getPosition().longitude;
+                        if (DIFF<=100) {
                               marker.remove();
                               markers.remove(key);
                               Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
-//update user_coins_mapping set coins=coins+1 where UserId="u_1
+//update user_coins_mapping set coins=coins+1 where UserId="u_1"
+                            DatabaseReference refUpdate = database.getReference().child("users")
+                                    .child(user_id).child("total_coins").get
+                            }
                               //update user_merchant_mapping set coins=coins-1 where latitude={} and longitude={}
-
-
-
 
                               return true;
                           } else {
@@ -272,29 +301,84 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             Marker value = (Marker) hm.getValue();
                             value.remove();
                         }
+
+                        DatabaseReference ref = database.getReference().child("merchants");
+                        ValueEventListener merchantListener = new ValueEventListener() {
+
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                                //Map<String,Merchant> m = new HashMap<>();
+                                //(Map<String, Object>) dataSnapshot.getChildren();
+                                List<Merchant> m = new ArrayList<>();
+                                merchantHashMap = new HashMap<>();
+                                for(DataSnapshot merchantSnapshot: dataSnapshot.getChildren()){
+                                    String mid = merchantSnapshot.getKey();
+
+                                    Log.w("mid: ",mid);
+                                    //String key = merchantSnapshot.getValue(Merchant);
+                                    Merchant merchant = merchantSnapshot.getValue(Merchant.class);
+                                    //m.add(merchant);
+                                    merchantHashMap.put(mid,merchant);
+                                }
+                                for(Map.Entry map : merchantHashMap.entrySet()){
+                                    Log.w("MerchantMapKey ",(String)map.getKey());
+                                    Merchant m123 = (Merchant)map.getValue();
+                                    Log.w("details: ",m123.totalCoins+" "+m123.latitude+" "+m123.longitude);
+                                }
+//                              for(Merchant x: m){
+//                                  //Log.w("mmmm",x.getMerchantId());
+//                              }
+                                // Log.w("merchants",merchantHashMap.toString().toString());
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        };
+                        ref.addListenerForSingleValueEvent(merchantListener);
+
+                        DatabaseReference refCoin = database.getReference().child("users").child("u_1");
+                        ValueEventListener listenerUsers = new ValueEventListener() {
+
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                                User user = dataSnapshot.getValue(User.class);
+                                allMerchants = user.getMerchants();
+
+                                for(String x: allMerchants){
+                                    Log.w("mmm:",x);
+
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        };
+                        refCoin.addListenerForSingleValueEvent(listenerUsers);
+
                         //plot nearby coins
-                        ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
-                        LatLng obj  = new LatLng(28.4938342, 77.0927204);
-                        coinsToPlot.add(obj);
-                        LatLng obj1  = new LatLng(28.4938392, 77.0927604);
-                        coinsToPlot.add(obj1);
-                        coinsToPlot.add(new LatLng(28.4938742, 77.0927244));
-                        createMarkerFromArray(coinsToPlot);
+                        merchantHashMap = SurferUtils.differenceMerchants(merchantHashMap,allMerchants);
+                        merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 600,latitude,longitude);
 
-                        coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
-                        coinsToCollect.add(obj);
-                        coinsToCollect.add(obj1);
+                        createMarkerFromArray(merchantHashMap);
 
-                        TextView text = new TextView(getApplicationContext());
-                        text.setText("Tap to collect!!");
-                    /*  IconGenerator generator = new IconGenerator(getApplicationContext());
-                      generator.setBackground(context.getDrawable(R.drawable.coin));
-                      generator.setContentView(text);
-                      Bitmap icon = generator.makeIcon();*/
-                        for (int i = 0; i < coinsToCollect.size(); i++) {
-                            double lat = coinsToCollect.get(i).latitude;
-                            double lon = coinsToCollect.get(i).longitude;
-                            String key = lat+"_"+lon;
+                        merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 100,latitude,longitude);
+                        //  coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
+
+
+
+                        for(Map.Entry<String,Merchant> hm : merchantHashMap.entrySet()){
+
+                            String key = (String)hm.getKey();
+                            Merchant value = (Merchant)hm.getValue();
+                            double lat = Double.valueOf(value.getLatitude());
+                            double lon = Double.valueOf(value.getLongitude());
+                            key = lat+"_"+lon;
                             if(markers.containsKey(key)) {
                                 Marker val = markers.get(key);
                                 val.setTag("Tap to collect!!");
@@ -311,9 +395,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 return false;
                             LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
                             String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
-                            if (coinsToCollect.contains(coin)) {
+                            double DIFF = SurferUtils.diffInMeters(latLng.latitude,latLng.longitude,marker.getPosition().latitude,marker.getPosition().longitude);
+
+                            if (DIFF<=100) {
                                 marker.remove();
                                 markers.remove(key);
+                                Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
+//update user_coins_mapping set coins=coins+1 where UserId="u_1
+                                //update user_merchant_mapping set coins=coins-1 where latitude={} and longitude={}
+
                                 return true;
                             } else {
                                 Toast.makeText(getApplicationContext(), "Move to the coin location to collect it!", Toast.LENGTH_SHORT).show();
@@ -384,19 +474,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markers.put(key,value);
     }
 
-    protected void createMarkerFromArray(ArrayList<LatLng> arr) {
+    protected void createMarkerFromArray(HashMap<String,Merchant> hashMap) {
 
+for(Map.Entry hm : hashMap.entrySet()){
 
-        for(int i = 0; i<arr.size() ;i++) {
-            double latitude = arr.get(i).latitude;
-            double longitude = arr.get(i).longitude;
-            String key = latitude+"_"+longitude;
-            Marker value =   mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(latitude, longitude))
-                    .title("Coins")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
-            markers.put(key,value);
-        }
+    String key = (String)hm.getKey();
+    Merchant value = (Merchant)hm.getValue();
+    double latitude = Double.valueOf(value.getLatitude());
+    double longitude = Double.valueOf(value.getLongitude());
+    String keyMarker = latitude+"_"+longitude;
+    Marker valueMarker =   mMap.addMarker(new MarkerOptions()
+            .position(new LatLng(latitude, longitude))
+            .title("Coins")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+
+    markers.put(keyMarker,valueMarker);
+
+}
+
 
     }
 
