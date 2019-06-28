@@ -2,13 +2,23 @@ package com.example.trackmylocation;
 
 public class Merchant {
 
+    public String merchantId;
+
     public String latitude;
+
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
+    }
 
     public String longitude;
 
-    public String totalCoins;
+    public Integer totalCoins;
 
-    public String redeemed;
+    public Integer redeemed;
 
     public String getLatitude() {
         return latitude;
@@ -26,19 +36,19 @@ public class Merchant {
         this.longitude = longitude;
     }
 
-    public String getTotalCoins() {
+    public Integer getTotalCoins() {
         return totalCoins;
     }
 
-    public void setTotalCoins(String totalCoins) {
+    public void setTotalCoins(Integer totalCoins) {
         this.totalCoins = totalCoins;
     }
 
-    public String getRedeemed() {
+    public Integer getRedeemed() {
         return redeemed;
     }
 
-    public void setRedeemed(String redeemed) {
+    public void setRedeemed(Integer redeemed) {
         this.redeemed = redeemed;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.trackmylocation;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
@@ -64,13 +65,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         surferUtils.print();
         setContentView(R.layout.activity_maps);
         wallet = findViewById(R.id.wallet_points);
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
         wallet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
              //   select Coins from user_coins_mapping where UserId='u_1';
-                final FirebaseDatabase database = FirebaseDatabase.getInstance();
                 DatabaseReference ref = database.getReference().child("users").child("users").child("u_1");
-
                 ValueEventListener userListener = new ValueEventListener() {
 
                     @Override
@@ -140,8 +140,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                           value.remove();
                       }
 
+                      DatabaseReference ref = database.getReference().child("merchants");
+                      ValueEventListener merchantListener = new ValueEventListener() {
 
+                          @Override
+                          public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
+                              //Map<String,Merchant> m = new HashMap<>();
+                                      //(Map<String, Object>) dataSnapshot.getChildren();
+                             List<Merchant> m = new ArrayList<>();
+                              for(DataSnapshot merchantSnapshot: dataSnapshot.getChildren()){
+                                  //String key = merchantSnapshot.getValue(Merchant);
+                                  Merchant merchant = merchantSnapshot.getValue(Merchant.class);
+                                  m.add(merchant);
+                              }
+//                              for(Map.Entry map : m.entrySet()){
+//                                  Log.w("MerchantMapKey ",(String)map.getKey());
+//                                  Log.w("MerchantMapValue ",(String) map.getValue());
+//                              }
+                              for(Merchant x: m){
+                                  Log.w("mmmm",x.getMerchantId());
+                              }
+                              Log.w("merchants",m.toString().toString());
+                          }
+
+                          @Override
+                          public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                          }
+                      };
+                      ref.addListenerForSingleValueEvent(merchantListener);
                       //plot nearby coins
                       ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
                       LatLng obj  = new LatLng(28.4938342, 77.0927204);
