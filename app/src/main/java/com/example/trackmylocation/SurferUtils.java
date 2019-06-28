@@ -12,14 +12,29 @@ public class SurferUtils {
 
     public static HashMap<String,Merchant>  coinsAtADistance(HashMap<String,Merchant> hashMap,int dist,double latUser,double lonUser){
 
-           for(Map.Entry hm : hashMap.entrySet()){
-           String key = (String)hm.getKey();
+//           for(Map.Entry hm : hashMap.entrySet()){
+//           String key = (String)hm.getKey();
+//           Merchant value = (Merchant)hm.getValue();
+//           double latitude = Double.valueOf(value.getLatitude());
+//           double longitude = Double.valueOf(value.getLongitude());
+//            double distance = diffInMeters(latitude,longitude,latUser,lonUser);
+////            if(distance> dist ){
+//////                hm.remove(key);
+////
+////            }
+//
+//
+//           }
+        Iterator it = hashMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry hm = (Map.Entry)it.next();
+            String key = (String)hm.getKey();
            Merchant value = (Merchant)hm.getValue();
            double latitude = Double.valueOf(value.getLatitude());
            double longitude = Double.valueOf(value.getLongitude());
             double distance = diffInMeters(latitude,longitude,latUser,lonUser);
-            if(distance> dist ){
-                hashMap.remove(key);
+            if(distance> dist ) {
+                it.remove();
             }
         }
 

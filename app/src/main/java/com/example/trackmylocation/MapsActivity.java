@@ -53,6 +53,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     String user_id = "u_1";
     List<String> allMerchants;
     HashMap<String,Merchant> merchantHashMap = new HashMap<>();
+    double latitude = 0.0;
+    double longitude = 0.0;
+    double latitude1 =0.0;
+    double longitude1 = 0.0;
+
     //FirebaseDatabase database;
     //DatabaseReference ref;
 
@@ -72,14 +77,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View view) {
              //   select Coins from user_coins_mapping where UserId='u_1';
-                DatabaseReference ref = database.getReference().child("users").child("users").child("u_1");
+                DatabaseReference ref = database.getReference().child("users").child("u_1");
                 ValueEventListener userListener = new ValueEventListener() {
 
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
-                        //Object yyy = dataSnapshot.child("users").child("u_1");
                         User user = dataSnapshot.getValue(User.class);
+                        if(user!=null)
                         Toast.makeText(getApplicationContext(),"Your total FC Points : "+user.getTotal_coins(),Toast.LENGTH_SHORT).show();
                     }
                     @Override
@@ -89,6 +94,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         // ...
                     }
                 };
+              //  Toast.makeText(getApplicationContext(),"Your total FC Points : "+"test",Toast.LENGTH_SHORT).show();
 
                 ref.addListenerForSingleValueEvent(userListener);
             }
@@ -117,8 +123,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
               @Override
               public void onLocationChanged(Location location) {
 
-                  double latitude = location.getLatitude();
-                  double longitude = location.getLongitude();
+                   latitude = location.getLatitude();
+                   longitude = location.getLongitude();
+                /*   if(SurferUtils.diffInMeters(latitude1,longitude1,latitude,longitude) !=0
+                           && SurferUtils.diffInMeters(latitude1,longitude1,latitude,longitude) < 70) return;
+*/                  latitude1 = location.getLatitude();
+                  longitude1 = location.getLongitude();
                   final LatLng latLng = new LatLng(latitude, longitude);
                   Geocoder geocoder = new Geocoder(getApplicationContext());
                   try {
@@ -203,11 +213,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                       //plot nearby coins
                       merchantHashMap = SurferUtils.differenceMerchants(merchantHashMap,allMerchants);
-                      merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 600,latitude,longitude);
+                      merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 400,latitude,longitude);
 
                       createMarkerFromArray(merchantHashMap);
 
-                      merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 100,latitude,longitude);
+                      merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 27,latitude,longitude);
                     //  coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
 
 
@@ -236,16 +246,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                           LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
                           String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
                         double DIFF = SurferUtils.diffInMeters(latLng.latitude,latLng.longitude,marker.getPosition().latitude,marker.getPosition().longitude);
-double la = marker.getPosition().latitude;
+                     Log.w("difference now ",String.valueOf(DIFF));
+                        double la = marker.getPosition().latitude;
 double lo = marker.getPosition().longitude;
-                        if (DIFF<=100) {
+                        if (DIFF<=27.0) {
                               marker.remove();
                               markers.remove(key);
                               Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
 //update user_coins_mapping set coins=coins+1 where UserId="u_1"
-                            DatabaseReference refUpdate = database.getReference().child("users")
-                                    .child(user_id).child("total_coins").get
-                            }
+                            DatabaseReference ref = database.getReference().child("users").child(user_id);
                               //update user_merchant_mapping set coins=coins-1 where latitude={} and longitude={}
 
                               return true;
@@ -277,8 +286,12 @@ double lo = marker.getPosition().longitude;
                 @Override
                 public void onLocationChanged(Location location) {
 
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    /*if(SurferUtils.diffInMeters(latitude1,longitude1,latitude,longitude) !=0
+                            && SurferUtils.diffInMeters(latitude1,longitude1,latitude,longitude) < 70) return;*/
+                    latitude1 = location.getLatitude();
+                    longitude1 = location.getLongitude();
                     final LatLng latLng = new LatLng(latitude, longitude);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
                     try {
@@ -363,11 +376,11 @@ double lo = marker.getPosition().longitude;
 
                         //plot nearby coins
                         merchantHashMap = SurferUtils.differenceMerchants(merchantHashMap,allMerchants);
-                        merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 600,latitude,longitude);
+                        merchantHashMap = SurferUtils.coinsAtADistance(merchantHashMap, 400,latitude,longitude);
 
                         createMarkerFromArray(merchantHashMap);
 
-                        merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 100,latitude,longitude);
+                        merchantHashMap =  SurferUtils.coinsAtADistance(merchantHashMap, 27,latitude,longitude);
                         //  coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
 
 
@@ -396,12 +409,15 @@ double lo = marker.getPosition().longitude;
                             LatLng coin = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
                             String key = marker.getPosition().latitude + "_" + marker.getPosition().longitude;
                             double DIFF = SurferUtils.diffInMeters(latLng.latitude,latLng.longitude,marker.getPosition().latitude,marker.getPosition().longitude);
-
-                            if (DIFF<=100) {
+                            Log.w("difference now ",String.valueOf(DIFF));
+                            double la = marker.getPosition().latitude;
+                            double lo = marker.getPosition().longitude;
+                            if (DIFF<=27.0) {
                                 marker.remove();
                                 markers.remove(key);
                                 Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
-//update user_coins_mapping set coins=coins+1 where UserId="u_1
+//update user_coins_mapping set coins=coins+1 where UserId="u_1"
+                                DatabaseReference ref = database.getReference().child("users").child(user_id);
                                 //update user_merchant_mapping set coins=coins-1 where latitude={} and longitude={}
 
                                 return true;
@@ -448,7 +464,7 @@ double lo = marker.getPosition().longitude;
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         usermMap = googleMap;
-       ArrayList<Double> latLang = new ArrayList<Double>();
+/*       ArrayList<Double> latLang = new ArrayList<Double>();
         latLang.add(28.4982091) ; latLang.add(77.1054209);
         latLang.add(28.4982012) ; latLang.add(77.1056465);
         latLang.add(28.4981213) ; latLang.add(77.1056364);
@@ -461,7 +477,7 @@ double lo = marker.getPosition().longitude;
         latLang.add(28.4720844) ; latLang.add(77.095662);
      for(int i = 0 ;i<20;i+=2){
           createMarker(latLang.get(i),latLang.get(i+1));
-      }
+      }*/
     }
 
     protected void createMarker(double latitude, double longitude) {
