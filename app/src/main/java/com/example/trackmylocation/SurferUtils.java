@@ -16,6 +16,7 @@ public class SurferUtils {
 
         ArrayList<LatLng> coinsToBePlotted = new ArrayList<>();
         //get all coins from database
+        //select MerchantId,latitude,longitude from merchant_info where MerchantId not in (select MerchantId from user_merchant_mapping where  UserId='u_1') ;
         ArrayList<Double> allCoinLat = new ArrayList<Double>();
         ArrayList<Double> allCoinLon = new ArrayList<Double>();
         for(int i =0 ; i<allCoinLat.size();i++){

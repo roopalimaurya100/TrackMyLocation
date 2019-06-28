@@ -55,6 +55,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         wallet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+             //   select Coins from user_coins_mapping where UserId='u_1';
                 Toast.makeText(getApplicationContext(),"Your total FC Points : ",Toast.LENGTH_SHORT).show();
             }
         });
@@ -108,11 +109,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                       }
                       //plot nearby coins
                       ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
-                      LatLng obj  = new LatLng(28.4982091, 77.1054209);
+                      LatLng obj  = new LatLng(28.4938342, 77.0927204);
                       coinsToPlot.add(obj);
-                      LatLng obj1  = new LatLng(28.4982221, 77.1055209);
+                      LatLng obj1  = new LatLng(28.4938392, 77.0927604);
                       coinsToPlot.add(obj1);
-                      coinsToPlot.add(new LatLng(28.4983091, 77.1054229));
+                      coinsToPlot.add(new LatLng(28.4938742, 77.0927244));
                       createMarkerFromArray(coinsToPlot);
 
                       coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
@@ -149,6 +150,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                               marker.remove();
                               markers.remove(key);
                               Toast.makeText(getApplicationContext(), "Congratulations!! You got the FC COIN", Toast.LENGTH_SHORT).show();
+//update user_coins_mapping set coins=coins+1 where UserId="u_1
+                              //update user_merchant_mapping set coins=coins-1 where latitude={} and longitude={}
+
+
+
 
                               return true;
                           } else {
@@ -205,11 +211,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         //plot nearby coins
                         ArrayList<LatLng> coinsToPlot = SurferUtils.coinsAtADistance(latLng, 500);
-                        LatLng obj  = new LatLng(28.4982091, 77.1054209);
+                        LatLng obj  = new LatLng(28.4938342, 77.0927204);
                         coinsToPlot.add(obj);
-                        LatLng obj1  = new LatLng(28.4982221, 77.1055209);
+                        LatLng obj1  = new LatLng(28.4938392, 77.0927604);
                         coinsToPlot.add(obj1);
-                        coinsToPlot.add(new LatLng(28.4983091, 77.1054229));
+                        coinsToPlot.add(new LatLng(28.4938742, 77.0927244));
                         createMarkerFromArray(coinsToPlot);
 
                         coinsToCollect = SurferUtils.coinsAtADistance(latLng, 20);
